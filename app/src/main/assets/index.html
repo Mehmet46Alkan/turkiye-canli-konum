@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Türkiye Canlı Konum</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="leaflet/leaflet.css">
 <style>
 :root{
   --accent:#E30A17; --on-accent:#FFFFFF;
@@ -217,11 +217,21 @@ html,body{ margin:0; padding:0; height:100%; overflow:hidden;
   <button class="btn ghost" id="errClose">Kapat</button>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="leaflet/leaflet.js"></script>
 <script>
 /* ============ Türkiye Canlı Konum — WebView UI ============ */
 (function(){
 'use strict';
+
+/* --- kütüphane yüklendi mi? --- */
+if(typeof L === 'undefined'){
+  document.getElementById('loader').classList.add('hidden');
+  document.getElementById('errTitle').textContent = 'Harita kütüphanesi yüklenemedi';
+  document.getElementById('errText').textContent =
+    'Leaflet yüklenemedi (assets/leaflet/leaflet.js). Lütfen uygulamayı yeniden kur.';
+  document.getElementById('errSheet').classList.remove('hidden');
+  return;
+}
 
 var TR_CENTER = [39.0, 35.0], TR_ZOOM = 6;
 var tracking = false, firstFix = true, lastPos = null;
