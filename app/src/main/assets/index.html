@@ -233,13 +233,39 @@ var map = L.map('map', {
   center: TR_CENTER, zoom: TR_ZOOM,
   zoomControl: false, attributionControl: true
 });
-var tileUrl = darkMap
-  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-  : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-L.tileLayer(tileUrl, {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap &copy; CARTO'
-}).addTo(map);
+/* ---- ÜCRETSİZ harita sağlayıcıları (API anahtarı YOK, ücret YOK) ----
+   Sırayla denenir: bir sunucu yüklenmezse otomatik yedeğe geçer,
+   böylece harita hiçbir zaman boş kalmaz. */
+var TR_LIGHT = [
+  { u:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',            a:'&copy; OpenStreetMap',              s:'' },
+  { u:'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', a:'&copy; OSM &copy; CARTO',       s:'abcd' },
+  { u:'https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png',         a:'&copy; OSM (DE)',                   s:'abc' },
+  { u:'https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',     a:'&copy; OSM &copy; HOT',             s:'abc' }
+];
+var TR_DARK = [
+  { u:'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',  a:'&copy; OSM &copy; CARTO',      s:'abcd' },
+  { u:'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', a:'&copy; OSM &copy; CARTO',  s:'abcd' },
+  { u:'https://tile.openstreetmap.org/{z}/{x}/{y}.png',            a:'&copy; OpenStreetMap',              s:'' }
+];
+var PROVIDERS = darkMap ? TR_DARK : TR_LIGHT;
+var provIdx = 0, tileFails = 0, tileLayer = null;
+
+function addProvider(i){
+  if(tileLayer){ map.removeLayer(tileLayer); tileLayer = null; }
+  var p = PROVIDERS[i];
+  tileFails = 0;
+  tileLayer = L.tileLayer(p.u, { maxZoom: 19, attribution: p.a });
+  if(p.s) tileLayer.options.subdomains = p.s;
+  tileLayer.on('tileerror', function(){
+    tileFails++;
+    if(tileFails >= 4 && provIdx < PROVIDERS.length - 1){
+      provIdx++;
+      addProvider(provIdx);
+    }
+  });
+  tileLayer.addTo(map);
+}
+addProvider(0);
 
 /* ---- katmanlar ---- */
 var marker = L.marker(TR_CENTER, {

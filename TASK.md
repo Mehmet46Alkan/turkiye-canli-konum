@@ -7,7 +7,9 @@ GOAL: Türkiye haritası üzerinde canlı GPS konumu gösteren APK — GitHub Ac
 - [x] Proje dosyaları yazıldı (WebView + Leaflet, MainActivity GPS köprüsü, ikon, dark mode)
 - [x] JS sözdizimi + XML denge kontrolü geçti
 - [x] GitHub'a push (Mehmet46Alkan/turkiye-canli-konum) — Actions run 39029193294 in_progress
-- [ ] Build başarılı mı kontrol → APK indirme linki ver
+- [x] Build başarılı → APK indirme linki verildi (release apk-2)
+
+DURUM: TAMAMLANDI. APK: https://github.com/Mehmet46Alkan/turkiye-canli-konum/releases/download/apk-2/app-debug.apk
 
 Mimari: WebView (assets/index.html) + Leaflet/OSM haritası, Türkiye merkezli (39,35 zoom6).
 MainActivity: LocationManager (GPS+Network) → evaluateJavascript ile JS'e iter; GSAT uydu sayısı GnssStatus'tan.
