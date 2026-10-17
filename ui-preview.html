@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Türkiye Canlı Konum — Tasarım Seçimi</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: 'Inter', -apple-system, "Segoe UI", Roboto, sans-serif; background: #0E0F13; color: #F2F2F4; padding: 32px 16px 64px; }
+h1 { text-align: center; font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.sub { text-align: center; font-size: 13px; color: #9A9AA0; margin-bottom: 36px; }
+.grid { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; max-width: 1400px; margin: 0 auto; }
+.mock { width: 390px; }
+.label { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: #fff; }
+.name { font-size: 16px; font-weight: 700; }
+.mood { font-size: 12px; color: #9A9AA0; width: 100%; margin-top: 4px; }
+.phone { width: 390px; height: 844px; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2A2A2E; }
+
+/* ===== MAP BASE (simulated OSM look via CSS) ===== */
+.mapbase { position: absolute; inset: 0; background: #E8E4DC; }
+.mapbase .land { position: absolute; background: #D9E8C8; }
+.mapbase .water { position: absolute; background: #AACEE8; }
+.mapbase .road { position: absolute; background: #FFFFFF; height: 6px; border-radius: 3px; box-shadow: 0 0 0 1px #E0D9CC; }
+.mapbase .road.major { height: 9px; background: #FFE8A3; box-shadow: 0 0 0 1px #E8C96A; }
+.mapbase .citydot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #6B6B6B; }
+.mapbase .cityname { position: absolute; font-size: 10px; color: #555; font-weight: 600; }
+.dark .mapbase { background: #16181D; }
+.dark .mapbase .land { background: #1D2026; }
+.dark .mapbase .water { background: #101A2B; }
+.dark .mapbase .road { background: #2E323A; box-shadow: none; }
+.dark .mapbase .road.major { background: #4A4032; box-shadow: none; }
+.dark .mapbase .citydot { background: #7A7E88; }
+.dark .mapbase .cityname { color: #9A9AA0; }
+
+/* live marker */
+.marker { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #2563EB; border: 4px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.35); }
+.pulse { position: absolute; width: 120px; height: 120px; border-radius: 50%; background: rgba(37,99,235,.15); border: 2px solid rgba(37,99,235,.35); transform: translate(-50%,-50%); }
+.marker.red { background: #E30A17; }
+.pulse.red { background: rgba(227,10,23,.14); border-color: rgba(227,10,23,.4); }
+.marker.cyan { background: #00E5C7; border-color: #0B0D10; box-shadow: 0 0 16px rgba(0,229,199,.7); }
+.pulse.cyan { background: rgba(0,229,199,.10); border-color: rgba(0,229,199,.35); }
+
+/* ===== shared UI atoms ===== */
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 13px; font-weight: 700; z-index: 5; }
+.fab { position: absolute; width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 6; }
+.livedot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+<h1>Türkiye Canlı Konum — 3 tasarım</h1>
+<p class="sub">Ana ekran: harita tam ekran, canlı GPS izi, üstte durum kartı, altta bilgi kartı. Beğendiğinin numarasını yaz (örn. “2”) — karıştırabilirsin de (“2 ama renk 1”).</p>
+
+<div class="grid">
+
+<!-- ============ ① KIRMIZI BAYRAK ============ -->
+<div class="mock">
+  <div class="label">
+    <div class="num" style="background:#E30A17">1</div>
+    <div class="name">Kırmızı Bayrak</div>
+    <div class="mood">Beyaz kartlar + Türk kırmızısı vurgu — milli, temiz, gündüz dostu</div>
+  </div>
+  <div class="phone">
+    <div class="mapbase">
+      <div class="water" style="top:0;left:0;right:0;height:90px"></div>
+      <div class="water" style="bottom:0;left:0;right:0;height:70px"></div>
+      <div class="water" style="top:0;left:0;width:60px;height:400px"></div>
+      <div class="land" style="top:90px;left:60px;right:0;height:684px"></div>
+      <div class="road major" style="top:300px;left:40px;width:340px;transform:rotate(-4deg)"></div>
+      <div class="road major" style="top:470px;left:60px;width:320px;transform:rotate(3deg)"></div>
+      <div class="road" style="top:380px;left:80px;width:280px;transform:rotate(8deg)"></div>
+      <div class="road" style="top:560px;left:60px;width:300px;transform:rotate(-6deg)"></div>
+      <div class="road" style="top:220px;left:100px;width:240px;transform:rotate(12deg)"></div>
+      <div class="citydot" style="top:296px;left:150px"></div><div class="cityname" style="top:282px;left:164px">Ankara</div>
+      <div class="citydot" style="top:170px;left:70px"></div><div class="cityname" style="top:156px;left:84px">İstanbul</div>
+      <div class="citydot" style="top:600px;left:240px"></div><div class="cityname" style="top:586px;left:254px">Adana</div>
+      <div class="citydot" style="top:520px;left:90px"></div><div class="cityname" style="top:506px;left:104px">İzmir</div>
+      <div class="pulse red" style="top:420px;left:210px"></div>
+      <div class="marker red" style="top:409px;left:199px"></div>
+    </div>
+    <div class="statusbar" style="color:#1A1A1A">
+      <span>09:41</span><span>◀ ⚡ ▮</span>
+    </div>
+    <!-- top card -->
+    <div style="position:absolute; top:56px; left:16px; right:16px; background:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 6px 24px rgba(0,0,0,.14); z-index:6">
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="livedot" style="background:#E30A17; box-shadow:0 0 0 4px rgba(227,10,23,.18)"></span>
+        <span style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#E30A17">CANLI YAYIN</span>
+        <span style="margin-left:auto; font-size:11px; color:#8A8A8E; font-weight:600">GPS • 4 uydu</span>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:14px">
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">HIZ</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">42 <span style="font-size:12px;color:#8A8A8E">km/s</span></div></div>
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">YÖN</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">KD ↗</div></div>
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">İSABET</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">±6 <span style="font-size:12px;color:#8A8A8E">m</span></div></div>
+      </div>
+    </div>
+    <!-- city label -->
+    <div style="position:absolute; top:640px; left:16px; background:#fff; border-radius:16px; padding:12px 16px; box-shadow:0 6px 24px rgba(0,0,0,.14); z-index:6; width:250px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;color:#8A8A8E">KONUM</div>
+      <div style="font-size:15px;font-weight:700;color:#1A1A1A;margin-top:4px">Kadıköy, İstanbul</div>
+      <div style="font-size:12px;color:#8A8A8E;margin-top:2px">39.7021° N — 32.8417° E</div>
+    </div>
+    <!-- FABs -->
+    <div class="fab" style="right:16px; bottom:170px; background:#fff; box-shadow:0 6px 20px rgba(0,0,0,.18)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E30A17" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5" fill="#E30A17" stroke="none"/></svg>
+    </div>
+    <!-- bottom CTA -->
+    <div style="position:absolute; left:16px; right:16px; bottom:28px; height:56px; border-radius:28px; background:#E30A17; display:flex; align-items:center; justify-content:center; gap:8px; color:#fff; font-size:15px; font-weight:700; box-shadow:0 10px 30px rgba(227,10,23,.4); z-index:6">
+      ▶ CANLI TAKİBİ BAŞLAT
+    </div>
+  </div>
+</div>
+
+<!-- ============ ② GECE RADAR ============ -->
+<div class="mock">
+  <div class="label">
+    <div class="num" style="background:#00E5C7; color:#0B0D10">2</div>
+    <div class="name">Gece Radar</div>
+    <div class="mood">Koyu harita + neon cam kartlar — teknolojik, gece şıklığı</div>
+  </div>
+  <div class="phone dark">
+    <div class="mapbase">
+      <div class="water" style="top:0;left:0;right:0;height:90px"></div>
+      <div class="water" style="bottom:0;left:0;right:0;height:70px"></div>
+      <div class="water" style="top:0;left:0;width:60px;height:400px"></div>
+      <div class="land" style="top:90px;left:60px;right:0;height:684px"></div>
+      <div class="road major" style="top:300px;left:40px;width:340px;transform:rotate(-4deg)"></div>
+      <div class="road major" style="top:470px;left:60px;width:320px;transform:rotate(3deg)"></div>
+      <div class="road" style="top:380px;left:80px;width:280px;transform:rotate(8deg)"></div>
+      <div class="road" style="top:560px;left:60px;width:300px;transform:rotate(-6deg)"></div>
+      <div class="road" style="top:220px;left:100px;width:240px;transform:rotate(12deg)"></div>
+      <div class="citydot" style="top:296px;left:150px"></div><div class="cityname" style="top:282px;left:164px">Ankara</div>
+      <div class="citydot" style="top:170px;left:70px"></div><div class="cityname" style="top:156px;left:84px">İstanbul</div>
+      <div class="citydot" style="top:600px;left:240px"></div><div class="cityname" style="top:586px;left:254px">Adana</div>
+      <div class="citydot" style="top:520px;left:90px"></div><div class="cityname" style="top:506px;left:104px">İzmir</div>
+      <div class="pulse cyan" style="top:420px;left:210px"></div>
+      <div class="marker cyan" style="top:409px;left:199px"></div>
+    </div>
+    <div class="statusbar" style="color:#F2F2F4">
+      <span>09:41</span><span>◀ ⚡ ▮</span>
+    </div>
+    <div style="position:absolute; top:56px; left:16px; right:16px; background:rgba(20,22,26,.78); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:14px 16px; box-shadow:0 8px 30px rgba(0,0,0,.5); z-index:6">
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="livedot" style="background:#00E5C7; box-shadow:0 0 0 4px rgba(0,229,199,.18), 0 0 12px rgba(0,229,199,.8)"></span>
+        <span style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#00E5C7">CANLI • RADAR AKTİF</span>
+        <span style="margin-left:auto; font-size:11px; color:#9A9AA0; font-weight:600">10 Hz</span>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:14px">
+        <div><div style="font-size:11px;color:#9A9AA0;font-weight:700;letter-spacing:.06em">HIZ</div><div style="font-size:18px;font-weight:800;color:#F2F2F4">42 <span style="font-size:12px;color:#9A9AA0">km/s</span></div></div>
+        <div><div style="font-size:11px;color:#9A9AA0;font-weight:700;letter-spacing:.06em">YÖN</div><div style="font-size:18px;font-weight:800;color:#F2F2F4">KD ↗</div></div>
+        <div><div style="font-size:11px;color:#9A9AA0;font-weight:700;letter-spacing:.06em">İSABET</div><div style="font-size:18px;font-weight:800;color:#F2F2F4">±6 <span style="font-size:12px;color:#9A9AA0">m</span></div></div>
+      </div>
+    </div>
+    <div style="position:absolute; top:640px; left:16px; background:rgba(20,22,26,.78); backdrop-filter:blur(14px); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:12px 16px; box-shadow:0 8px 30px rgba(0,0,0,.5); z-index:6; width:250px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;color:#9A9AA0">KONUM</div>
+      <div style="font-size:15px;font-weight:700;color:#F2F2F4;margin-top:4px">Kadıköy, İstanbul</div>
+      <div style="font-size:12px;color:#9A9AA0;margin-top:2px">39.7021° N — 32.8417° E</div>
+    </div>
+    <div class="fab" style="right:16px; bottom:170px; background:rgba(20,22,26,.9); border:1px solid rgba(0,229,199,.4); box-shadow:0 0 20px rgba(0,229,199,.25)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E5C7" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5" fill="#00E5C7" stroke="none"/></svg>
+    </div>
+    <div style="position:absolute; left:16px; right:16px; bottom:28px; height:56px; border-radius:28px; background:#00E5C7; display:flex; align-items:center; justify-content:center; gap:8px; color:#0B0D10; font-size:15px; font-weight:800; box-shadow:0 10px 34px rgba(0,229,199,.45); z-index:6">
+      ▶ CANLI TAKİBİ BAŞLAT
+    </div>
+  </div>
+</div>
+
+<!-- ============ ③ SAKİN HARİTA ============ -->
+<div class="mock">
+  <div class="label">
+    <div class="num" style="background:#4F46E5">3</div>
+    <div class="name">Sakin Harita</div>
+    <div class="mood">Açık zemin + indigo vurgu — sade, ferah, günlük kullanım</div>
+  </div>
+  <div class="phone">
+    <div class="mapbase" style="background:#F0EEE9">
+      <div class="water" style="top:0;left:0;right:0;height:90px"></div>
+      <div class="water" style="bottom:0;left:0;right:0;height:70px"></div>
+      <div class="water" style="top:0;left:0;width:60px;height:400px"></div>
+      <div class="land" style="top:90px;left:60px;right:0;height:684px;background:#E4EDE0"></div>
+      <div class="road major" style="top:300px;left:40px;width:340px;transform:rotate(-4deg)"></div>
+      <div class="road major" style="top:470px;left:60px;width:320px;transform:rotate(3deg)"></div>
+      <div class="road" style="top:380px;left:80px;width:280px;transform:rotate(8deg)"></div>
+      <div class="road" style="top:560px;left:60px;width:300px;transform:rotate(-6deg)"></div>
+      <div class="road" style="top:220px;left:100px;width:240px;transform:rotate(12deg)"></div>
+      <div class="citydot" style="top:296px;left:150px"></div><div class="cityname" style="top:282px;left:164px">Ankara</div>
+      <div class="citydot" style="top:170px;left:70px"></div><div class="cityname" style="top:156px;left:84px">İstanbul</div>
+      <div class="citydot" style="top:600px;left:240px"></div><div class="cityname" style="top:586px;left:254px">Adana</div>
+      <div class="citydot" style="top:520px;left:90px"></div><div class="cityname" style="top:506px;left:104px">İzmir</div>
+      <div class="pulse" style="top:420px;left:210px"></div>
+      <div class="marker" style="top:409px;left:199px"></div>
+    </div>
+    <div class="statusbar" style="color:#1A1A1A">
+      <span>09:41</span><span>◀ ⚡ ▮</span>
+    </div>
+    <div style="position:absolute; top:56px; left:16px; right:16px; background:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 4px 18px rgba(0,0,0,.10); z-index:6">
+      <div style="display:flex; align-items:center; gap:8px">
+        <span class="livedot" style="background:#4F46E5; box-shadow:0 0 0 4px rgba(79,70,229,.16)"></span>
+        <span style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#4F46E5">CANLI KONUM</span>
+        <span style="margin-left:auto; font-size:11px; color:#8A8A8E; font-weight:600">Güncel</span>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:14px">
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">HIZ</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">42 <span style="font-size:12px;color:#8A8A8E">km/s</span></div></div>
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">YÖN</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">KD ↗</div></div>
+        <div><div style="font-size:11px;color:#8A8A8E;font-weight:700;letter-spacing:.06em">İSABET</div><div style="font-size:18px;font-weight:800;color:#1A1A1A">±6 <span style="font-size:12px;color:#8A8A8E">m</span></div></div>
+      </div>
+    </div>
+    <div style="position:absolute; top:640px; left:16px; background:#fff; border-radius:16px; padding:12px 16px; box-shadow:0 4px 18px rgba(0,0,0,.10); z-index:6; width:250px">
+      <div style="font-size:11px;font-weight:800;letter-spacing:.08em;color:#8A8A8E">KONUM</div>
+      <div style="font-size:15px;font-weight:700;color:#1A1A1A;margin-top:4px">Kadıköy, İstanbul</div>
+      <div style="font-size:12px;color:#8A8A8E;margin-top:2px">39.7021° N — 32.8417° E</div>
+    </div>
+    <div class="fab" style="right:16px; bottom:170px; background:#fff; box-shadow:0 6px 20px rgba(0,0,0,.16)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="2.5" fill="#4F46E5" stroke="none"/></svg>
+    </div>
+    <div style="position:absolute; left:16px; right:16px; bottom:28px; height:56px; border-radius:28px; background:#4F46E5; display:flex; align-items:center; justify-content:center; gap:8px; color:#fff; font-size:15px; font-weight:700; box-shadow:0 10px 30px rgba(79,70,229,.4); z-index:6">
+      ▶ CANLI TAKİBİ BAŞLAT
+    </div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

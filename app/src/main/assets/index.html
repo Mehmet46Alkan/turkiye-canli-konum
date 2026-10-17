@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Türkiye Canlı Konum</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --accent:#E30A17; --on-accent:#FFFFFF;
+  --bg:#F6F7F9; --card:#FFFFFF;
+  --text-1:#1A1A1A; --text-2:#8A8A8E; --line:#EFEFF0;
+  --danger:#E0453A; --ok:#1B7A43;
+  --radius:16px; --pad:16px; --gap:12px;
+  --shadow:0 6px 24px rgba(0,0,0,.14);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#121214; --card:#1E1E20; --text-1:#F2F2F4;
+         --text-2:#9A9AA0; --line:#2A2A2E; --accent:#FF3B47;
+         --shadow:0 8px 30px rgba(0,0,0,.5); }
+}
+*{ -webkit-tap-highlight-color:transparent; box-sizing:border-box; }
+html,body{ margin:0; padding:0; height:100%; overflow:hidden;
+  font:400 15px/1.45 -apple-system,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--text-1);
+  user-select:none; -webkit-user-select:none; }
+
+#map{ position:fixed; inset:0; z-index:0; background:var(--bg); }
+
+/* ---------- üst durum kartı ---------- */
+#topcard{
+  position:fixed; top:calc(env(safe-area-inset-top) + 12px);
+  left:16px; right:16px; z-index:500;
+  background:var(--card); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow);
+  transition:opacity .25s, transform .25s;
+}
+#topcard .head{ display:flex; align-items:center; gap:8px; }
+.livedot{ width:8px; height:8px; border-radius:50%; background:var(--accent);
+  box-shadow:0 0 0 4px rgba(227,10,23,.18); animation:blink 1.4s ease-in-out infinite; }
+@keyframes blink{ 50%{ opacity:.35; } }
+.livedot.off{ background:var(--text-2); box-shadow:0 0 0 4px rgba(138,138,142,.15); animation:none; }
+#livetext{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--accent); }
+#livetext.off{ color:var(--text-2); }
+#satmeta{ margin-left:auto; font-size:11px; font-weight:600; color:var(--text-2); }
+.stats{ margin-top:10px; display:flex; gap:18px; }
+.stat .k{ font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--text-2); }
+.stat .v{ font-size:18px; font-weight:800; color:var(--text-1); }
+.stat .v small{ font-size:12px; font-weight:600; color:var(--text-2); }
+
+/* ---------- alt konum kartı ---------- */
+#botcard{
+  position:fixed; left:16px; right:84px;
+  bottom:calc(env(safe-area-inset-bottom) + 96px);
+  z-index:500; background:var(--card); border-radius:var(--radius);
+  padding:12px 16px; box-shadow:var(--shadow);
+  transition:opacity .25s, transform .25s;
+}
+#botcard .k{ font-size:11px; font-weight:800; letter-spacing:.08em; color:var(--text-2); }
+#addr{ font-size:15px; font-weight:700; color:var(--text-1); margin-top:4px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#coords{ font-size:12px; color:var(--text-2); margin-top:2px;
+  font-variant-numeric:tabular-nums; }
+
+/* ---------- FAB'lar ---------- */
+.fab{
+  position:fixed; right:16px; z-index:500;
+  width:52px; height:52px; border-radius:50%;
+  background:var(--card); border:0; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:transform .15s;
+}
+.fab:active{ transform:scale(.92); }
+#fabLoc{ bottom:calc(env(safe-area-inset-bottom) + 164px); }
+#fabZoomIn{ bottom:calc(env(safe-area-inset-bottom) + 232px); }
+#fabZoomOut{ bottom:calc(env(safe-area-inset-bottom) + 296px); }
+.fab svg{ width:22px; height:22px; stroke:var(--accent); }
+
+/* ---------- alt CTA ---------- */
+#cta{
+  position:fixed; left:16px; right:16px;
+  bottom:calc(env(safe-area-inset-bottom) + 24px);
+  z-index:500; height:56px; border:0; border-radius:28px;
+  background:var(--accent); color:var(--on-accent);
+  font-size:15px; font-weight:700; letter-spacing:.02em;
+  box-shadow:0 10px 30px rgba(227,10,23,.4);
+  cursor:pointer; transition:transform .15s, background .2s;
+}
+#cta:active{ transform:scale(.97); }
+#cta.stop{ background:#2A2A2E; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+
+/* ---------- durum ekranları (izin / hata / gps yok) ---------- */
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:900;
+  background:var(--card); border-radius:24px 24px 0 0;
+  padding:28px 24px calc(env(safe-area-inset-bottom) + 28px);
+  box-shadow:0 -12px 40px rgba(0,0,0,.25);
+  transform:translateY(0); transition:transform .3s ease;
+}
+.sheet.hidden{ transform:translateY(110%); }
+.sheet .ico{ width:72px; height:72px; margin:0 auto 16px; display:block;
+  stroke:var(--accent); }
+.sheet h2{ font-size:20px; font-weight:800; text-align:center; margin:0 0 8px; }
+.sheet p{ font-size:14px; color:var(--text-2); text-align:center; margin:0 0 20px; }
+.sheet .btn{
+  display:block; width:100%; height:56px; border:0; border-radius:28px;
+  background:var(--accent); color:#fff; font-size:15px; font-weight:700;
+  cursor:pointer; transition:transform .15s;
+}
+.sheet .btn:active{ transform:scale(.97); }
+.sheet .btn.ghost{ background:transparent; color:var(--text-2); height:44px;
+  font-size:13px; margin-top:8px; }
+
+/* yükleniyor (GPS aranıyor) */
+#loader{
+  position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+  z-index:800; background:var(--card); border-radius:var(--radius);
+  padding:20px 24px; box-shadow:var(--shadow); text-align:center;
+  transition:opacity .25s;
+}
+#loader.hidden{ opacity:0; pointer-events:none; }
+.spinner{ width:28px; height:28px; margin:0 auto 10px;
+  border:3px solid var(--line); border-top-color:var(--accent);
+  border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+#loader .t{ font-size:13px; color:var(--text-2); }
+
+/* çevrimdışı şerit */
+#offline{
+  position:fixed; top:calc(env(safe-area-inset-top) + 8px); left:50%;
+  transform:translateX(-50%); z-index:700;
+  background:#FFF4E5; color:#8A5A00; font-size:12px; font-weight:700;
+  padding:6px 14px; border-radius:20px; display:none;
+  box-shadow:0 4px 14px rgba(0,0,0,.12);
+}
+@media (prefers-color-scheme: dark){ #offline{ background:#3A2E10; color:#FFC46B; } }
+#offline.show{ display:block; }
+
+/* Leaflet kendi kontrollereri */
+.leaflet-control-attribution{ font-size:9px !important; opacity:.75; }
+.leaflet-bar a{ background:var(--card) !important; color:var(--accent) !important;
+  border-color:var(--line) !important; }
+.hide{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- çevrimdışı uyarı -->
+<div id="offline">İnternet yok — harita görünmeyebilir</div>
+
+<!-- üst durum kartı -->
+<div id="topcard">
+  <div class="head">
+    <span class="livedot off" id="livedot"></span>
+    <span id="livetext" class="off">BEKLEMEDE</span>
+    <span id="satmeta">GPS kapanık</span>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">HIZ</div><div class="v"><span id="spd">—</span> <small>km/s</small></div></div>
+    <div class="stat"><div class="k">YÖN</div><div class="v" id="dir">—</div></div>
+    <div class="stat"><div class="k">İSABET</div><div class="v">±<span id="acc">—</span> <small>m</small></div></div>
+  </div>
+</div>
+
+<!-- alt konum kartı -->
+<div id="botcard">
+  <div class="k">KONUM</div>
+  <div id="addr">Konum aranıyor…</div>
+  <div id="coords">— , —</div>
+</div>
+
+<!-- FAB'lar -->
+<button class="fab" id="fabZoomIn" aria-label="Yakınlaştır">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+<button class="fab" id="fabZoomOut" aria-label="Uzaklaştır">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+</button>
+<button class="fab" id="fabLoc" aria-label="Konumuma git">
+  <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    <circle cx="12" cy="12" r="2.5" fill="var(--accent)" stroke="none"/>
+  </svg>
+</button>
+
+<!-- alt CTA -->
+<button id="cta">▶ CANLI TAKİBİ BAŞLAT</button>
+
+<!-- yükleniyor -->
+<div id="loader" class="hidden">
+  <div class="spinner"></div>
+  <div class="t" id="loadText">GPS sinyali aranıyor…</div>
+</div>
+
+<!-- izin sayfası -->
+<div class="sheet hidden" id="permSheet">
+  <svg class="ico" viewBox="0 0 72 72" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 8 C24 8 15 17 15 29 C15 45 36 64 36 64 C36 64 57 45 57 29 C57 17 48 8 36 8 Z"/>
+    <circle cx="36" cy="29" r="8"/>
+  </svg>
+  <h2>Konum izni gerekli</h2>
+  <p>Türkiye haritasında canlı konumunu gösterebilmemiz için konum iznini açman yeterli. Konumun yalnızca cihazında kalır.</p>
+  <button class="btn" id="permBtn">İZİN VER</button>
+  <button class="btn ghost" id="permLater">Daha sonra</button>
+</div>
+
+<!-- hata sayfası (GPS kapalı / izin reddedildi) -->
+<div class="sheet hidden" id="errSheet">
+  <svg class="ico" viewBox="0 0 72 72" fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 12 L64 60 L8 60 Z"/><path d="M36 30 v14"/><circle cx="36" cy="52" r="1.5" fill="var(--accent)"/>
+  </svg>
+  <h2 id="errTitle">Konum alınamıyor</h2>
+  <p id="errText">GPS kapalı görünüyor. Ayarlardan konumu açıp tekrar dene.</p>
+  <button class="btn" id="errBtn">TEKRAR DENE</button>
+  <button class="btn ghost" id="errClose">Kapat</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ============ Türkiye Canlı Konum — WebView UI ============ */
+(function(){
+'use strict';
+
+var TR_CENTER = [39.0, 35.0], TR_ZOOM = 6;
+var tracking = false, firstFix = true, lastPos = null;
+var trail = [], pendingAddr = 0, lastSats = 0;
+
+/* ---- Leaflet kurulumu (Türkiye odaklı) ---- */
+var darkMap = window.matchMedia('(prefers-color-scheme: dark)').matches;
+var map = L.map('map', {
+  center: TR_CENTER, zoom: TR_ZOOM,
+  zoomControl: false, attributionControl: true
+});
+var tileUrl = darkMap
+  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+  : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+L.tileLayer(tileUrl, {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap &copy; CARTO'
+}).addTo(map);
+
+/* ---- katmanlar ---- */
+var marker = L.marker(TR_CENTER, {
+  icon: L.divIcon({
+    className:'',
+    html:'<div style="width:22px;height:22px;border-radius:50%;background:#E30A17;border:4px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)"></div>',
+    iconSize:[22,22], iconAnchor:[11,11]
+  }),
+  zIndexOffset: 1000, interactive: false
+});
+var accCircle = L.circle(TR_CENTER, {
+  radius: 60, color:'#E30A17', weight:2,
+  fillColor:'#E30A17', fillOpacity:.14, interactive:false
+});
+var trailLine = L.polyline([], {
+  color:'#E30A17', weight:4, opacity:.7, lineJoin:'round'
+});
+var placed = false;
+
+/* ---- yön kompası ---- */
+function dirText(b){
+  if(b < 0) return '—';
+  var names = ['K','KD','D','GD','G','GB','B','KB'];
+  return names[Math.round(b/45) % 8] + ' ↗';
+}
+
+/* ---- koordinat formatı ---- */
+function fmtCoords(lat, lng){
+  return Math.abs(lat).toFixed(4) + '° ' + (lat>=0?'K':'G') + ' — '
+       + Math.abs(lng).toFixed(4) + '° ' + (lng>=0?'D':'B');
+}
+
+/* ---- ters geokod (yavaş, sonik) ---- */
+function revGeocode(lat, lng){
+  var now = Date.now();
+  if(now - pendingAddr < 10000) return;
+  pendingAddr = now;
+  if(!navigator.onLine) return;
+  var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2'
+          + '&lat=' + lat + '&lon=' + lng + '&zoom=14&accept-language=tr';
+  fetch(url).then(function(r){ return r.json(); }).then(function(j){
+    if(!lastPos) return;
+    var a = j.address || {};
+    var parts = [];
+    var street = a.road || a.pedestrian || a.suburb || a.neighbourhood;
+    var city = a.city || a.town || a.village || a.county || a.state;
+    if(street) parts.push(street);
+    if(city && city !== street) parts.push(city);
+    var line = parts.join(', ');
+    if(line && lastPos) document.getElementById('addr').textContent = line;
+  }).catch(function(){ /* sessizce geç */ });
+}
+
+/* ---- Android köprüsü (varsa) ---- */
+var A = window.Android;
+
+window.__onLocation = function(o){
+  lastPos = o;
+  var ll = [o.lat, o.lng];
+
+  if(!placed){
+    marker.addTo(map); accCircle.addTo(map); trailLine.addTo(map);
+    placed = true;
+  }
+  marker.setLatLng(ll);
+  if(o.acc > 0) accCircle.setLatLng(ll).setRadius(Math.max(o.acc, 5));
+  else accCircle.setLatLng(ll);
+
+  trail.push(ll);
+  if(trail.length > 600) trail.shift();
+  trailLine.setLatLngs(trail);
+
+  document.getElementById('spd').textContent = o.speed >= 0 ? o.speed : '—';
+  document.getElementById('dir').textContent = dirText(o.bearing);
+  document.getElementById('acc').textContent = o.acc >= 0 ? o.acc : '—';
+  document.getElementById('coords').textContent = fmtCoords(o.lat, o.lng);
+
+  revGeocode(o.lat, o.lng);
+
+  if(firstFix){
+    firstFix = false;
+    map.flyTo(ll, 15, {duration:1.2});
+    hideLoader();
+  }else if(tracking){
+    // takip sırasında merkezde tut (kullanıcı uzaklaşırsa)
+    var c = map.getCenter();
+    var d = map.distance(c, ll);
+    if(d > 400) map.panTo(ll, {animate:true, duration:.6});
+  }
+  setLive(true);
+};
+
+window.__onPermission = function(ok){
+  if(ok){
+    hideSheet('permSheet');
+    startTracking();
+  }else{
+    showErr('İzin verilmedi',
+      'Konum izni reddedildi. Android ayarlarından uygulamaya konum izni verip tekrar dene.');
+  }
+};
+
+window.__onState = function(st, n){
+  if(st === 'sats'){
+    lastSats = n || 0;
+    if(tracking && lastSats > 0){
+      document.getElementById('satmeta').textContent = 'GPS • ' + lastSats + ' uydu';
+    }else{
+      document.getElementById('satmeta').textContent = 'GPS aktif';
+    }
+    return;
+  }
+  if(st === 'gps_off'){
+    tracking = false; setLive(false); hideLoader();
+    setBtn(false);
+    showErr('Konum alınamıyor',
+      'GPS kapalı görünüyor. Ayarlardan konumu (Hassas) açıp tekrar dene.');
+  }else if(st === 'permission_denied'){
+    tracking = false; setLive(false); hideLoader(); setBtn(false);
+    showErr('İzin verilmedi',
+      'Konum izni olmadan canlı takip çalışmaz. Ayarlardan izin verip tekrar dene.');
+  }else if(st === 'stopped'){
+    setLive(false); setBtn(false);
+  }else if(st === 'tracking'){
+    setLive(true); setBtn(true);
+  }
+};
+
+/* sats güncellemesi (inline, argüman taşımamak için) */
+window.__onState2 = null;
+
+/* ---- UI durum yardımcıları ---- */
+function setLive(on){
+  var dot = document.getElementById('livedot');
+  var txt = document.getElementById('livetext');
+  if(on){
+    dot.classList.remove('off'); txt.classList.remove('off');
+    txt.textContent = 'CANLI YAYIN';
+    document.getElementById('satmeta').textContent =
+      lastSats > 0 ? 'GPS • ' + lastSats + ' uydu' : 'GPS aktif';
+  }else{
+    dot.classList.add('off'); txt.classList.add('off');
+    txt.textContent = 'BEKLEMEDE';
+    document.getElementById('satmeta').textContent = 'GPS kapanık';
+    document.getElementById('spd').textContent = '—';
+    document.getElementById('dir').textContent = '—';
+    document.getElementById('acc').textContent = '—';
+  }
+}
+function setBtn(on){
+  var cta = document.getElementById('cta');
+  if(on){ cta.textContent = '⏸ TAKİBİ DURDUR'; cta.classList.add('stop'); }
+  else  { cta.textContent = '▶ CANLI TAKİBİ BAŞLAT'; cta.classList.remove('stop'); }
+}
+function hideLoader(){ document.getElementById('loader').classList.add('hidden'); }
+function showLoader(t){
+  document.getElementById('loadText').textContent = t || 'GPS sinyali aranıyor…';
+  document.getElementById('loader').classList.remove('hidden');
+}
+function hideSheet(id){ document.getElementById(id).classList.add('hidden'); }
+function showSheet(id){ document.getElementById(id).classList.remove('hidden'); }
+function showErr(title, text){
+  document.getElementById('errTitle').textContent = title;
+  document.getElementById('errText').textContent = text;
+  showSheet('errSheet');
+}
+
+function startTracking(){
+  tracking = true; firstFix = true;
+  setBtn(true);
+  showLoader('GPS sinyali aranıyor…');
+  hideSheet('permSheet'); hideSheet('errSheet');
+  if(A){ A.start(); }
+  else {
+    // tarayıcı önizlemesi fallback'i
+    if(navigator.geolocation){
+      navigator.geolocation.watchPosition(function(p){
+        window.__onLocation({
+          lat:p.coords.latitude, lng:p.coords.longitude,
+          acc:Math.round(p.coords.accuracy),
+          speed:p.coords.speed!=null?Math.round(p.coords.speed*36)/10:-1,
+          bearing:p.coords.bearing!=null?Math.round(p.coords.bearing):-1,
+          time:p.timestamp, provider:'GPS'
+        });
+      }, function(){
+        showErr('Konum alınamıyor','Tarayıcı konum izni verilmedi ya da GPS kapalı.');
+      }, {enableHighAccuracy:true, maximumAge:2000, timeout:20000});
+    }
+  }
+  // 20 sn içinde ilk düzeltme gelmezse uyar
+  setTimeout(function(){
+    if(firstFix && tracking){
+      hideLoader();
+      showErr('Sinyal bulunamadı',
+        'GPS sinyali alınamadı. Açık alanda tekrar dene, konumun sadece cihazında işlenir.');
+    }
+  }, 20000);
+}
+function stopTracking(){
+  tracking = false; setLive(false); setBtn(false); hideLoader();
+  if(A){ A.stop(); }
+}
+
+/* ---- olaylar ---- */
+document.getElementById('cta').addEventListener('click', function(){
+  if(tracking) stopTracking(); else startTracking();
+});
+document.getElementById('fabLoc').addEventListener('click', function(){
+  if(lastPos){
+    map.flyTo([lastPos.lat, lastPos.lng], Math.max(map.getZoom(), 15), {duration:.8});
+  }else{
+    map.flyTo(TR_CENTER, TR_ZOOM, {duration:.8});
+  }
+});
+document.getElementById('fabZoomIn').addEventListener('click', function(){ map.zoomIn(); });
+document.getElementById('fabZoomOut').addEventListener('click', function(){ map.zoomOut(); });
+document.getElementById('permBtn').addEventListener('click', function(){
+  if(A) A.permission();
+  else startTracking();
+});
+document.getElementById('permLater').addEventListener('click', function(){
+  hideSheet('permSheet');
+});
+document.getElementById('errBtn').addEventListener('click', function(){
+  hideSheet('errSheet');
+  startTracking();
+});
+document.getElementById('errClose').addEventListener('click', function(){
+  hideSheet('errSheet');
+});
+
+/* çevrimdışı şerit */
+function netCheck(){
+  document.getElementById('offline').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', netCheck);
+window.addEventListener('offline', netCheck);
+netCheck();
+
+/* ---- başlangıç ---- */
+if(A && A.hasPermission && A.hasPermission()){
+  hideSheet('permSheet');
+  // izin zaten var → hemen canlı takibe başla
+  startTracking();
+}else if(A){
+  setTimeout(function(){ showSheet('permSheet'); }, 600);
+}else{
+  // tarayıcı önizlemesi (Android köprüsü yok)
+  setTimeout(function(){ showSheet('permSheet'); }, 600);
+}
+})();
+</script>
+</body>
+</html>
